@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # tradingfloor
 
 generated using Luminus version "2.9.11.12"
@@ -19,3 +20,6 @@ To start a web server for the application, run:
 ## License
 
 Copyright © 2016 FIXME
+=======
+# TradingFloor
+>>>>>>> 38d90525fcc570d6bf32da1bede18f365edd57c1
