@@ -6,7 +6,8 @@
             [tradingfloor.config :refer [env]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.tools.logging :as log]
-            [mount.core :as mount])
+            [mount.core :as mount]
+            [tradingfloor.db.core :as trdb])
   (:gen-class))
 
 (def cli-options
