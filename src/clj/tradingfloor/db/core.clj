@@ -13,15 +13,20 @@
             BatchUpdateException
             Date
             Timestamp
-            PreparedStatement]))
+            PreparedStatement]
+            java.lang.Boolean))
 
 (defstate ^:dynamic *db*
            :start (conman/connect! {:jdbc-url (env :database-url)})
            :stop (conman/disconnect! *db*))
 
-(conman/bind-connection *db* "sql/user_qc.sql")
-(conman/bind-connection *db* "sql/note_qc.sql")
-(conman/bind-connection *db* "sql/offer_qc.sql")
+;add persistence to namespaces
+(in-ns 'tradingfloor.db.user)
+(conman.core/bind-connection tradingfloor.db.core/*db* "sql/user_qc.sql")
+(in-ns 'tradingfloor.db.offer)
+(conman.core/bind-connection tradingfloor.db.core/*db* "sql/offer_qc.sql")
+
+(in-ns 'tradingfloor.db.core)
 
 (defn to-date [^java.sql.Date sql-date]
   (-> sql-date (.getTime) (java.util.Date.)))
