@@ -19,7 +19,9 @@
            :start (conman/connect! {:jdbc-url (env :database-url)})
            :stop (conman/disconnect! *db*))
 
-(conman/bind-connection *db* "sql/queries.sql")
+(conman/bind-connection *db* "sql/user_qc.sql")
+(conman/bind-connection *db* "sql/note_qc.sql")
+(conman/bind-connection *db* "sql/offer_qc.sql")
 
 (defn to-date [^java.sql.Date sql-date]
   (-> sql-date (.getTime) (java.util.Date.)))
