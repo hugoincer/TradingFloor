@@ -12,7 +12,7 @@ SELECT public.create_temp_auth(:email, :oneTimePass, :expirationTime,
 
 -- :name change-password! :! :n
 -- :doc Changes the password of specified user.
-UPDATE public.user
+UPDATE public.role
 SET password = :password
 WHERE id = :id
 RETURNING NULL;
@@ -23,22 +23,22 @@ UPDATE public."userData"
 SET "firstName" = :firstName,
      patronymic = :patronymic,
     "lastName" = :lastName,
-    "contactData" = :contactData
+    "contacts" = :contacts
 WHERE "userId" = :id
 RETURNING 0;
 
 -- :name add-like! :! :n
 -- :doc Increments amount of likes for specified user.
 UPDATE public."userData"
-SET "likesAmount" = "likesAmount" + 1;
-WHERE "userId" = (SELECT id FROM public.user WHERE email = :email)
+SET "likes" = "likes" + 1;
+WHERE "userId" = (SELECT id FROM public.role WHERE email = :email)
 RETURNING 0;
 
 -- :name add-dislike! :! :n
 -- :doc Increments amount of dislikes for specified user.
 UPDATE public."userData"
-SET "dislikesAmount" = "dislikesAmount" + 1;
-WHERE "userId" = (SELECT id FROM public.user WHERE email = :email)
+SET "dislikes" = "dislikes" + 1;
+WHERE "userId" = (SELECT id FROM public.role WHERE email = :email)
 RETURNING 0;
 
 -- :name update-last-login! :! :n
@@ -48,23 +48,35 @@ SET "lastLogin" = current_timestamp,
 WHERE "userId" = :id
 RETURNING 0;
 
+-- :name change-photo! :! :n
+-- :doc Updates user photo
+UPDATE public."userData"
+SET photo = :photo
+WHERE "userId" = :id
+RETURNING 0;
+
 --- QUERIES DEFINITIONS ---
 
 -- :name get-auth-data :? :1
 -- :doc Get user data for authenticity check.
-SELECT (email, password, "expirationTime")
-FROM public.user
+SELECT (email, password)
+FROM public.role
 WHERE id = :id;
 
 -- :name get-auth-ones :? :1
 -- :doc Get user data for temporary authenticity check.
 SELECT (email, "oneTimePass", "expirationTime")
-FROM public.user
+FROM public.role
 WHERE id = :id;
 
--- :name get-data :? :1
+-- :name get-user-data :? :1
 -- :doc Get full user data.
-SELECT ("firstName", patronymic, "lastName", "contactData",
-        "lastLogin", "likesAmount", "dislikesAmount")
+SELECT ("firstName", patronymic, "lastName", likes, dislikes, "lastLogin",
+        "contacts")
 FROM public."userData"
 WHERE "userId" = :id;
+
+-- :name get-user-photo :? :1
+-- :doc Gets the user photo as BLOB.
+SELECT photo FROM public."userData"
+WHERE "userId" = :id
