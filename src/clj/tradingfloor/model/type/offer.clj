@@ -1,10 +1,32 @@
 (ns tradingfloor.model.type.offer)
 
 
-(defrecord Price [value, currency])
+(defrecord Price [value currency])
 
-(defrecord OfferHeader [^String name price moddate ^long viewed status] )
+(defrecord OfferHeader [name price moddate viewed] )
 
-(defrecord OfferIdentifier [^long userId ^long id])
+(defrecord UserOfferRelation [userId offerId])
 
-(defrecord OfferData [offerHeader ^long amount description offerIdentifier] )
+(defrecord OfferData [offerHeader amount description offerIdentifier] )
+
+
+;--additional constructors
+(defn full->OfferData
+  "Creates a new trade offer data object."
+  [{:keys [name value currency moddate viewed amount description userid offerid]}]
+  (->OfferData (OfferHeader. name (Price. value currency) moddate viewed)
+               amount
+               description
+               (UserOfferRelation. userid offerid)))
+
+
+(defn without-stat->OfferData
+  "Creates a new trade offer data object withous statistics."
+  [{:keys [name value currency moddate viewed amount description userid offerid]}]
+  (->OfferData (OfferHeader. name (Price. value currency) nil nil)
+               amount
+               description
+               (UserOfferRelation. userid offerid)))
+
+(defn conv-to-list [off-seq]
+  (doall (map #(full->OfferData %)  off-seq)))
