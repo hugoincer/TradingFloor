@@ -1,26 +1,30 @@
 (ns tradingfloor.model.logic.data.offer
           (:require
-                   [tradingfloor.model.validation.offer :as vo]
-                   [tradingfloor.db.offer :as dao])
-          (:import [ tradingfloor.model.type.offer
+                   [tradingfloor.model.logic.validation.offer :as vo]
+                   [tradingfloor.model.logic.validation.general :as vg]
+                   [tradingfloor.db.core]
+                   [tradingfloor.model.type.offer])
+          (:alias db tradingfloor.db.offer)
+          (:refer tradingfloor.model.type.offer)
+          (:import [tradingfloor.model.type.offer
                      Price
                      OfferHeader
-                     OfferData
-                     OfferIdentifier ]))
+                     UserOfferRelation
+                     OfferData]))
 
 (defprotocol OfferProtocol
 
    (create! [this offer])
-   (remove! [this offerIdentifier])
+   (change! [this offerIdentifier])
    (change-status! [this offerIdentifier status])
    (subscribe [this offerIdentifier])
    (change-price! [this offerIdentifier price] )
 
-   (inc-viewed! [this ^long offerId])
-   (take-price [this ^long offerId])
-   (take-detailed [this ^long offerId])
-   (find-offers-for-user [this ^long userId ^long from ^long to])
-   (take-offers-list [this ^long from ^long to])
+   (inc-viewed! [this offerId])
+   (take-price [this offerId])
+   (take-detailed [this offerId])
+   (find-offers-for-user [this userId amount from])
+   (take-offers-list [this amount from])
 
  #_(change-photo! [this offerIdentifier photo])
  #_(get-user-offers-with-filters)
@@ -28,52 +32,63 @@
 )
 
 (deftype Offer [])
-
 (extend-type Offer
           OfferProtocol
 
      ;--
-     (create! [this offer] (
-         (dao/create-offer! offer))
+     (create! [this offer]
+        (db/create-offer! offer))
 
      ;--
-     (remove! [this offerIdentifier]
-         ((dao/remove-offer! offerIdentifier))
+     (change! [this offer]
+
+        (if (not= (without-stat->OfferData
+                      (db/get-user-offer-detailed (:offerIdentifier offer)))
+                  offer)
+            ;--then
+            (db/change-offer! offer)
+        ))
 
      ;--
-     (change-status! [this offerIdentifier status](
-         (dao/change-offer-status! {:offerIndetifier offerIdentifier
-                                    :status status})))
+     (change-status! [this offerIdentifier status]
+         (db/change-offer-status! {:status status
+                                   :offerIdentifier offerIdentifier}))
+
+     ;--
+     (subscribe [this subscribtion]
+         (if (:subscribed (db/subscription-exists  {:subscribtion subscribtion}))
+             "You're already subscribed!"
+             (db/create-subscription! {:subscribtion subscribtion}))
+     )
 
      ;--
      (change-price! [this offerIdentifier price]
-         (dao/change-offer-price! {:offerIdentifier offerIdentifier
-                                   :price price}))
-     ;--
-     (subscribe [this offerIdentifier]()
-        (dao/create-subscription! offerIdentifier))
+         (db/change-offer-price! {:price price
+                                  :offerIdentifier offerIdentifier}))
 
      ;--
-     (inc-viewed! [this ^long offerId]
-         (dao/inc-offer-viewed! {:id offerId} ))
+     (take-price [this offerId]
+         (map->Price (db/get-offer-price {:offerId  offerId}))
+     )
 
      ;--
-     (take-price [this ^long offerId]
-           (dao/get-offer-price {:id offerId}))
+     (take-detailed [this offerId]
+         (full->OfferData (db/get-offer-detailed  {:offerId  offerId}))
+         (db/inc-offer-viewed! {:offerId  offerId})
+     )
 
      ;--
-     (take-detailed [this ^long offerId]
-           (dao/get-offer-detailed {:id offerId}) )
-
+     (find-offers-for-user [this userId amount from]
+         (conv-to-list (db/get-user-offers-in-range {:userId userId
+                                                     :curpos amount
+                                                     :curoff from}))
+     )
      ;--
-     (find-offers-for-user [this ^long userId ^long from ^long to]
-         (dao/get-user-offers-in-range {:userId userId
-                                    :curpos from
-                                    :curoff to}))
+     (take-offers-list [this amount from]
+        (conv-to-list (db/get-offers-in-range {:curpos amount :curoff from}))
+     )
 
-     ;--
-     (take-offers-list [this ^long from ^long to]
-       (dao/get-offers-in-range {:curpos  from
-                             :curoff to}))
-
+   #_(change-photo! [this offerIdentifier photo])
+   #_(get-user-offers-with-filters)
+   #_(get-user-offers-with-filters)
 )
