@@ -20,7 +20,6 @@
    (subscribe [this offerIdentifier])
    (change-price! [this offerIdentifier price] )
 
-   (inc-viewed! [this offerId])
    (take-price [this offerId])
    (take-detailed [this offerId])
    (find-offers-for-user [this userId amount from])
