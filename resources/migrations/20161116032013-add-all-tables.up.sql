@@ -2,6 +2,7 @@
 --        TABLES DEFINITIONS
 --
 
+--Creating currency table
 CREATE SEQUENCE "tradingfloor_dev"."public"."currency_id_seq";
 
 CREATE TABLE "tradingfloor_dev"."public"."currency" (
@@ -13,12 +14,40 @@ CREATE TABLE "tradingfloor_dev"."public"."currency" (
 
 ALTER SEQUENCE "tradingfloor_dev"."public"."currency_id_seq" OWNED BY "tradingfloor_dev"."public"."currency"."id";
 
+INSERT INTO "tradingfloor_dev"."public"."currency" ("name")
+VALUES ('BYR'),
+       ('RUB'),
+       ('USD'),
+       ('EUR');
+
+--Simple protection from modification
+CREATE OR REPLACE FUNCTION public.protect_currency()
+  RETURNS trigger AS
+$func$
+BEGIN
+   RAISE EXCEPTION 'Fuck of from currency!';
+END;
+$func$  LANGUAGE plpgsql STRICT;
+
+CREATE TRIGGER prevent__currency_action
+       BEFORE INSERT OR UPDATE OR DELETE ON "tradingfloor_dev"."public"."currency"
+       FOR EACH STATEMENT EXECUTE PROCEDURE public.protect_currency();
+
+
+CREATE TYPE LIKE_ACTION AS ENUM ('l', 'd', 'n');
+
+CREATE TABLE "tradingfloor_dev"."public"."likes" (
+                "likerId" INTEGER NOT NULL,
+                "likedUserId" INTEGER NOT NULL,
+                "like_action" LIKE_ACTION NOT NULL DEFAULT 'n',
+                CONSTRAINT "likesidpk" PRIMARY KEY ("likerId", "likedUserId")
+);
+
 CREATE TABLE "tradingfloor_dev"."public"."notificationSubscription" (
                 "tradeOfferId" INTEGER NOT NULL,
                 "userId" INTEGER NOT NULL,
                 CONSTRAINT "notificationsubscriptionpk_fk" PRIMARY KEY ("tradeOfferId", "userId")
 );
-
 
 CREATE SEQUENCE "tradingfloor_dev"."public"."role_id_seq";
 
@@ -31,25 +60,24 @@ CREATE TABLE "tradingfloor_dev"."public"."role" (
                 CONSTRAINT "rolepk" PRIMARY KEY ("id")
 );
 
-
-
-
 ALTER SEQUENCE "tradingfloor_dev"."public"."role_id_seq" OWNED BY "tradingfloor_dev"."public"."role"."id";
+
+CREATE TYPE OFFER_STATUS AS ENUM ('a', 's', 'd');
 
 CREATE SEQUENCE "tradingfloor_dev"."public"."tradeoffer_id_seq";
 
 CREATE TABLE "tradingfloor_dev"."public"."tradeOffer" (
                 "id" INTEGER NOT NULL DEFAULT nextval('"tradingfloor_dev"."public"."tradeoffer_id_seq"'),
                 "name" VARCHAR(50) NOT NULL,
-                "price" NUMERIC(2),
-                "currencyId" INTEGER DEFAULT 1 NOT NULL,
-                "moddate" DATE NOT NULL,
-                "viewed" INTEGER DEFAULT 0 NOT NULL,
-                "status" BOOLEAN DEFAULT false NOT NULL,
-                "userId" INTEGER NOT NULL,
                 "amount" INTEGER DEFAULT 1 NOT NULL,
-                "description" VARCHAR(1000) NOT NULL,
-                "photo" BYTEA,
+                "price" NUMERIC(12,2),
+                "currencyId" INTEGER NOT NULL DEFAULT 1,
+                "moddate" TIMESTAMP NOT NULL DEFAULT current_timestamp,
+                "description" TEXT NOT NULL,
+                "viewed" INTEGER NOT NULL DEFAULT 0,
+                "status" OFFER_STATUS NOT NULL DEFAULT 'a',
+                "userId" INTEGER NOT NULL,
+                "photo" BYTEA
                 CONSTRAINT "tradeofferpk" PRIMARY KEY ("id")
 );
 
@@ -61,21 +89,18 @@ CREATE TABLE "tradingfloor_dev"."public"."userData" (
                 "firstName" VARCHAR(50) NOT NULL,
                 "patronymic" VARCHAR(50) NOT NULL,
                 "lastName" VARCHAR(50),
+                "lastLogin" TIMESTAMP NOT NULL DEFAULT current_timestamp,
                 "likes" INTEGER DEFAULT 0 NOT NULL,
                 "dislikes" INTEGER DEFAULT 0 NOT NULL,
-                "lastLogin" TIMESTAMP,
-                "contacts" VARCHAR(500) NOT NULL,
+                "contacts" TEXT NOT NULL,
                 "photo" BYTEA,
                 CONSTRAINT "userdatapk_fk" PRIMARY KEY ("userId")
 );
 
---
---      SEARCH INDEXES
---
 
-CREATE INDEX tradeoffer_amount_moddate_idx
+CREATE INDEX tradeoffer_amount_date_idx
  ON "tradingfloor_dev"."public"."tradeOffer"
- ( "amount", "moddate" );
+ ( "amount", "date" );
 
 CREATE INDEX tradeoffer_nad_idx
  ON "tradingfloor_dev"."public"."tradeOffer"
@@ -89,56 +114,66 @@ CREATE INDEX tradeoffer_name_idx
  ON "tradingfloor_dev"."public"."tradeOffer"
  ( "name" );
 
---
---      UNIQUE INDEXES
---
-
 CREATE UNIQUE INDEX user_email_idx
  ON "tradingfloor_dev"."public"."role"
  ( "email" );
 
- CREATE UNIQUE INDEX currency_name_idx
-  ON "tradingfloor_dev"."public"."currency"
-  ( "name" );
+CREATE UNIQUE INDEX currency_name_idx
+ ON "tradingfloor_dev"."public"."currency"
+ ( "name" );
 
---
---    CASCADE OPERATION CONSTRAINTS
---
 
 ALTER TABLE "tradingfloor_dev"."public"."tradeOffer" ADD CONSTRAINT "currencytype_tradeoffer_fk"
 FOREIGN KEY ("currencyId")
 REFERENCES "tradingfloor_dev"."public"."currency" ("id")
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
 NOT DEFERRABLE;
 
 ALTER TABLE "tradingfloor_dev"."public"."notificationSubscription" ADD CONSTRAINT "user_notificationsubscription_fk"
 FOREIGN KEY ("userId")
 REFERENCES "tradingfloor_dev"."public"."role" ("id")
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
 NOT DEFERRABLE;
 
 ALTER TABLE "tradingfloor_dev"."public"."tradeOffer" ADD CONSTRAINT "user_tradeoffer_fk"
 FOREIGN KEY ("userId")
 REFERENCES "tradingfloor_dev"."public"."role" ("id")
-ON DELETE CASCADE
+ON DELETE RESTRICT
 ON UPDATE RESTRICT
 NOT DEFERRABLE;
 
 ALTER TABLE "tradingfloor_dev"."public"."userData" ADD CONSTRAINT "user_userdata_fk"
 FOREIGN KEY ("userId")
 REFERENCES "tradingfloor_dev"."public"."role" ("id")
-ON DELETE CASCADE
+ON DELETE RESTRICT
 ON UPDATE RESTRICT
 NOT DEFERRABLE;
 
 ALTER TABLE "tradingfloor_dev"."public"."notificationSubscription" ADD CONSTRAINT "tradeoffer_notificationsubscription_fk"
 FOREIGN KEY ("tradeOfferId")
 REFERENCES "tradingfloor_dev"."public"."tradeOffer" ("id")
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
 NOT DEFERRABLE;
+
+ALTER TABLE "tradingfloor_dev"."public"."likes" ADD CONSTRAINT "userdata_likes_fk1"
+FOREIGN KEY ("likedUserId")
+REFERENCES "tradingfloor_dev"."public"."userData" ("userId")
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
+NOT DEFERRABLE;
+
+ALTER TABLE "tradingfloor_dev"."public"."likes" ADD CONSTRAINT "userdata_likes_fk"
+FOREIGN KEY ("likerId")
+REFERENCES "tradingfloor_dev"."public"."userData" ("userId")
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
+NOT DEFERRABLE;
+
+
+
 
 --
 --      STORED PROCEDURES AND FUNCTIONS
@@ -149,14 +184,19 @@ CREATE OR REPLACE FUNCTION public.create_user(email_in VARCHAR(50), password_in 
   RETURNS BOOLEAN AS
 $func$
 BEGIN
-    WITH new_id  AS (
-        INSERT INTO public.role (email, password)
-            VALUES (email_in, password_in) RETURNING id
-    )
+   IF ((SELECT email FROM  public.role WHERE email = email_in) IS NULL) THEN
 
-    INSERT INTO public."userData" ("userId", "firstName", patronymic, "lastName", contacts)
-    VALUES ( (SELECT id FROM new_id ), "firstName_in", "patronymic_in", "lastName_in", "contacts_in");
-    RETURN TRUE;
+      WITH new_id  AS (
+          INSERT INTO public.role (email, password)
+              VALUES (email_in, password_in) RETURNING id
+      )
+
+      INSERT INTO public."userData" ("userId", "firstName", patronymic, "lastName", contacts)
+      VALUES ( (SELECT id FROM new_id ), "firstName_in", "patronymic_in", "lastName_in", "contacts_in");
+      RETURN TRUE;
+    ELSE
+      RETURN FALSE;
+    END IF;
   EXCEPTION
     WHEN unique_violation THEN
             RETURN FALSE;
