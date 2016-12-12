@@ -77,7 +77,7 @@ CREATE TABLE "tradingfloor_dev"."public"."tradeOffer" (
                 "viewed" INTEGER NOT NULL DEFAULT 0,
                 "status" OFFER_STATUS NOT NULL DEFAULT 'a',
                 "userId" INTEGER NOT NULL,
-                "photo" BYTEA
+                "photo" BYTEA,
                 CONSTRAINT "tradeofferpk" PRIMARY KEY ("id")
 );
 
@@ -100,7 +100,7 @@ CREATE TABLE "tradingfloor_dev"."public"."userData" (
 
 CREATE INDEX tradeoffer_amount_date_idx
  ON "tradingfloor_dev"."public"."tradeOffer"
- ( "amount", "date" );
+ ( "amount", "moddate" );
 
 CREATE INDEX tradeoffer_nad_idx
  ON "tradingfloor_dev"."public"."tradeOffer"
