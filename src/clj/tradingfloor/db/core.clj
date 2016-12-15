@@ -25,7 +25,6 @@
 (conman.core/bind-connection tradingfloor.db.core/*db* "sql/user_qc.sql")
 (in-ns 'tradingfloor.db.offer)
 (conman.core/bind-connection tradingfloor.db.core/*db* "sql/offer_qc.sql")
-
 (in-ns 'tradingfloor.db.core)
 
 (defn to-date [^java.sql.Date sql-date]
