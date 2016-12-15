@@ -8,7 +8,7 @@ VALUES( :offerHeader.name,
         :offerHeader.price.value,
         public.get_price_id(:offerHeader.price.currency),
         :offerIdentifier.userId,
-        :amount,
+        :offerHeader.amount,
         :description )
 RETURNING 0;
 
@@ -107,9 +107,18 @@ SELECT  EXISTS (SELECT * FROM public."notificationSubscription"
 
 -- :name get-offers-in-range :? :*
 -- :doc Get user offers list.
-SELECT * FROM public."tradeOffer"
+SELECT public."tradeOffer"."id" AS "offerId",
+       public."tradeOffer"."name" AS "name",
+       "amount",
+       "price" AS "value",
+       public."currency"."name" AS "currency",
+       "moddate",
+       "viewed"
+FROM public."tradeOffer"
+JOIN public."currency" ON (public."currency"."id" = "currencyId")
 ORDER BY moddate ASC
-LIMIT :curpos OFFSET :curoff;
+LIMIT :amount OFFSET :frompos;
+
 
 -- :name get-user-offers-in-range :? :*
 -- :doc Get user offers list.

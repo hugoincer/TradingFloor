@@ -59,15 +59,15 @@ RETURNING 0;
 
 -- :name get-auth-data :? :1
 -- :doc Get user data for authenticity check.
-SELECT (email, password)
+SELECT id, password
 FROM public.role
-WHERE id = :id;
+WHERE email = :email;
 
 -- :name get-auth-ones :? :1
 -- :doc Get user data for temporary authenticity check.
-SELECT (email, "oneTimePass", "expirationTime")
+SELECT email, "oneTimePass", "expirationTime"
 FROM public.role
-WHERE id = :id;
+WHERE email = :email;
 
 -- :name get-user-data :? :1
 -- :doc Get full user data.
