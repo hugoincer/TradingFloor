@@ -5,29 +5,93 @@
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
             [markdown.core :refer [md->html]]
-            [tradingfloor.ajax :refer [load-interceptors!]]
-            [ajax.core :refer [GET POST]])
+            [tradingfloor.ajax :refer [load-interceptors! command-ajax]]
+            [ajax.core :refer [GET POST]]
+            [tradingfloor.auth :as ta]
+            [tradingfloor.offer :as tof])
   (:import goog.History))
+;      [tradingfloor.offer :as tof])
 
-(defn nav-link [uri title page collapsed?]
+
+(def displayed (r/atom "none"))
+(def logedin (r/atom false))
+
+
+(defn nav-link [id name displayed value]
   [:li.nav-item
-   {:class (when (= page (session/get :page)) "active")}
-   [:a.nav-link
-    {:href uri
-     :on-click #(reset! collapsed? true)} title]])
+   {:style {:color (if (= @displayed value) "black"  "white" )}}
+   [:label {:id id
+     :on-click #(reset! displayed (if (= @displayed value)
+                                      "none" value))} name]])
+(defn nav-logout [id name]
+  [:li.nav-item
+   {:style {:color "white" }}
+   [:label {:id id } name]])
 
-(defn navbar []
-  (let [collapsed? (r/atom true)]
-    (fn []
-      [:nav.navbar.navbar-dark.bg-primary
-       [:button.navbar-toggler.hidden-sm-up
-        {:on-click #(swap! collapsed? not)} "☰"]
-       [:div.collapse.navbar-toggleable-xs
-        (when-not @collapsed? {:class "in"})
-        [:a.navbar-brand {:href "#/"} "tradingfloor"]
-        [:ul.nav.navbar-nav
-         [nav-link "#/" "Home" :home collapsed?]
-         [nav-link "#/about" "About" :about collapsed?]]]])))
+
+(defn navbar [loggedin]
+   [:nav.navbar.navbar-dark.bg-primary
+     [:div.collapse.navbar-toggleable-xs
+       [:a.navbar-brand {:href "#/"} "tradingfloor"]
+         [:ul.nav.navbar-nav
+          (if (not @loggedin)
+           [:div
+               [nav-link "navlogin" "Login" displayed "login"]
+               [nav-link "navregister" "Register" displayed "register"]]
+
+           [nav-logout "navlogout" "Logout"])
+        ]]])
+
+
+(defn some-magic [message]
+   [:input {:type "text" :value @message
+            :on-change #(reset! message (-> % .-target .-value))}]
+)
+
+
+(defn my-ajax-func []
+ (let [message (r/atom "Test message")
+       val  (r/atom 1)]
+ (fn []
+  [:div
+    [:label @message][:br]
+    [:label @val][:br]
+    [some-magic message][:br]
+    [:input {:id "ajtest" :type "button" :value "Test Aj"
+             :on-click #(command-ajax "command" "magic"
+                {:user "magc" :password "1345"}
+                (fn [resp args]
+                    (js/alert resp))
+                   ; (reset! message (:message resp)))
+                [message val]
+             )} ][:br]
+  ])
+))
+
+(defn high-form []
+ (let [loggedin (r/atom false)]
+   (fn []
+     [:div
+       [navbar loggedin]
+       (if (not @loggedin)
+         [:div.bordered
+            (cond
+              (= @displayed "login") [ta/loginform loggedin]
+              (= @displayed "register") [ta/regform])] )
+
+      [my-ajax-func]
+      [:div
+       (for [item tof/testoffers]
+         ^{:key (:offerid item)}
+          [:div [:hr] [tof/offer-short item]])]]
+ )
+ )
+)
+
+
+;[nav-link "navlogin" "Login" displayedlog]
+ ; [:button.navbar-toggler.hidden-sm-up
+  ; {:on-click #(swap! collapsed? not)} "☰"]
 
 (defn about-page []
   [:div.container
@@ -76,8 +140,7 @@
   (GET (str js/context "/docs") {:handler #(session/put! :docs %)}))
 
 (defn mount-components []
-  (r/render [#'navbar] (.getElementById js/document "navbar"))
-  (r/render [#'page] (.getElementById js/document "app")))
+  (r/render [#'high-form] (.getElementById js/document "highform")))
 
 (defn init! []
   (load-interceptors!)
