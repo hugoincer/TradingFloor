@@ -30,8 +30,10 @@
                  [ring-middleware-format "0.7.0"]
                  [ring-webjars "0.1.1"]
                  [ring/ring-defaults "0.2.1"]
+                 [ring/ring-json "0.4.0"]
                  [secretary "1.2.3"]
-                 [selmer "1.10.0"]]
+                 [selmer "1.10.0"]
+                 [com.draines/postal "2.0.2"]]
 
   :min-lein-version "2.0.0"
 
@@ -52,7 +54,7 @@
    :nrepl-port 7002
    :css-dirs ["resources/public/css"]
    :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-  
+
 
   :profiles
   {:uberjar {:omit-source true
@@ -68,8 +70,8 @@
                  :pretty-print false
                  :closure-warnings
                  {:externs-validation :off :non-standard-jsdoc :off}}}}}
-             
-             
+
+
              :aot :all
              :uberjar-name "tradingfloor.jar"
              :source-paths ["env/prod/clj"]
@@ -102,9 +104,9 @@
                       :source-map true
                       :optimizations :none
                       :pretty-print true}}}}
-                  
-                  
-                  
+
+
+
                   :doo {:build "test"}
                   :source-paths ["env/dev/clj" "test/clj"]
                   :resource-paths ["env/dev/resources"]
@@ -121,7 +123,7 @@
                       :main "tradingfloor.doo-runner"
                       :optimizations :whitespace
                       :pretty-print true}}}}
-                  
+
                   }
    :profiles/dev {}
    :profiles/test {}})
