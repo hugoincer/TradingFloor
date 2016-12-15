@@ -84,7 +84,7 @@
      )
      ;--
      (take-offers-list [this amount from]
-        (conv-to-list (db/get-offers-in-range {:curpos amount :curoff from}))
+        (conv-to-list (db/get-offers-in-range {:amount amount :frompos from}))
      )
 
    #_(change-photo! [this offerIdentifier photo])

@@ -1,4 +1,4 @@
-(ns tradingfloor.model.validation.offer)
+(ns tradingfloor.model.logic.validation.offer)
 
 ;--
 (v/defvalidator valid-password

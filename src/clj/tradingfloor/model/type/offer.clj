@@ -3,19 +3,17 @@
 
 (defrecord Price [value currency])
 
-(defrecord OfferHeader [name price moddate viewed] )
+(defrecord OfferHeader [name price amount moddate viewed] )
 
 (defrecord UserOfferRelation [userId offerId])
 
-(defrecord OfferData [offerHeader amount description offerIdentifier] )
-
+(defrecord OfferData [offerHeader description offerIdentifier] )
 
 ;--additional constructors
 (defn full->OfferData
   "Creates a new trade offer data object."
   [{:keys [name value currency moddate viewed amount description userid offerid]}]
-  (->OfferData (OfferHeader. name (Price. value currency) moddate viewed)
-               amount
+  (->OfferData (OfferHeader. name (Price. value currency) amount moddate viewed)
                description
                (UserOfferRelation. userid offerid)))
 
@@ -23,8 +21,7 @@
 (defn without-stat->OfferData
   "Creates a new trade offer data object withous statistics."
   [{:keys [name value currency moddate viewed amount description userid offerid]}]
-  (->OfferData (OfferHeader. name (Price. value currency) nil nil)
-               amount
+  (->OfferData (OfferHeader. name (Price. value currency) amount nil nil)
                description
                (UserOfferRelation. userid offerid)))
 

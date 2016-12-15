@@ -15,9 +15,8 @@
     #_(change-photo! [this ^long userId photo])
 )
 
-(deftype UserData)
-
-(extend-type UserData
+(deftype UserManager [])
+(extend-type UserManager
         UserDataProtocol
 
      ;--
